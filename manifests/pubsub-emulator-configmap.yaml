@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pubsub-emulator-config
+data:
+  application.yaml: |
+    server:
+      port: 8080
+    kafka:
+      bootstrapServers: kafka1-0.kafka1-headless:9092,kafka1-1.kafka1-headless:9092,kafka1-2.kafka1-headless:9092
+      consumer:
+        subscriptions:
+          - name: subscription-topic1
+            topic: topic1
+            ackDeadlineSeconds: 10
+        properties:
+          max.poll.records: 2000
+      producer:
+        topics:
+          - topic1
+        properties:
+          linger.ms: 5
+          batch.size: 1000000
+          buffer.memory: 32000000
+
