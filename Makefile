@@ -2,7 +2,7 @@ VERSION=1.0.0.0
 IMAGE=us.gcr.io/kafka-pubsub-emulator/kafka-pubsub-emulator
 JAR=./kafka-pubsub-emulator/target/kafka-pubsub-emulator-$(VERSION).jar
 SOURCES_DIR=kafka-pubsub-emulator/src/main/java/com/google/cloud/partners/pubsub/kafka/
-SOURCES=$(shell find $(SOURCES_DIR) -name '*.java')
+SOURCES=$(shell find $(SOURCES_DIR) -type f -name '*.java')
 
 KAFKA_RELEASE=kafka1
 EMULATOR_RELEASE=emu1
@@ -10,15 +10,12 @@ EMULATOR_RELEASE=emu1
 kafka-pubsub-emulator:
 	git clone https://github.com/riccardomc/kafka-pubsub-emulator
 
-$(JAR): kafka-pubsub-emulator $(SOURCES)
+%.jar: $(SOURCES) kafka-pubsub-emulator
+	@echo $(SOURCES)
 	(cd kafka-pubsub-emulator ; mvn package -DskipTests=True)
 
-.PHONY: jar
-jar: $(JAR)
-
 .PHONY: build
-build: jar
-	@echo $(SOURCES)
+build: $(JAR)
 	eval $$(minikube docker-env) ;\
 	docker build --build-arg version=$(VERSION) -t $(IMAGE):$(VERSION) ./kafka-pubsub-emulator
 
