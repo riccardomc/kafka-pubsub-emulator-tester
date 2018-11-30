@@ -17,7 +17,29 @@ var (
 )
 
 func TestTopic(t *testing.T) {
-
+	Convey("Given a Pub/Sub client", t, func() {
+		ctx := context.Background()
+		client, err := pubsub.NewClient(ctx, projectID)
+		if err != nil {
+			log.Fatalf("Failed to create client: %v", err)
+		}
+		Convey("When the client creates an new topic", func() {
+			//Attempting to delete the topic before testing
+			subCheck := client.Topic("topic-new")
+			err := subCheck.Delete(ctx)
+			if err != nil {
+				log.Printf("Delete topic before test failed: %v", err)
+			}
+			t, err := client.CreateTopic(ctx, "topic-new")
+			Convey("Then the topic is created with no errors", func() {
+				So(err, ShouldBeNil)
+				So(t, ShouldNotBeNil)
+				exists, err := t.Exists(ctx)
+				So(err, ShouldBeNil)
+				So(exists, ShouldBeTrue)
+			})
+		})
+	})
 }
 
 func TestSubscription(t *testing.T) {
