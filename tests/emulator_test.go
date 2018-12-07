@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"reflect"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -180,8 +181,85 @@ func TestSinglePublisherSingleSubscriber(t *testing.T) {
 	})
 }
 
+func TestSinglePublisherMultipleSubscribers(t *testing.T) {
+	var publishResults []*PublishResult
+	var topic string
+	var wg sync.WaitGroup
+
+	subscribers := 100
+	newSubscriptions := make([]*pubsub.Subscription, subscribers)
+
+	// Setup a new topic and subscriptions and delete them when done
+	rand.Seed(time.Now().UnixNano())
+	ctx := context.Background()
+	newTopic, err := createRandomTopic(ctx)
+	if newTopic != nil && err == nil {
+		topic = newTopic.ID()
+		defer newTopic.Delete(ctx)
+	} else {
+		log.Fatalf("Failed to init tests: %v", err)
+	}
+	for i := 0; i < subscribers; i++ {
+		newSubscriptions[i], err = createRandomSubscription(ctx, newTopic.ID())
+		if newSubscriptions[i] != nil && err == nil {
+			defer newSubscriptions[i].Delete(ctx)
+		} else {
+			log.Fatalf("Failed to init tests: %v", err)
+		}
+	}
+
+	Convey("Given a Publisher", t, func() {
+		ctx := context.Background()
+		publisher, err := NewPublisher(ctx, projectID, "pub1")
+		if err != nil {
+			t.Fatalf("Unable to create client: %v", err)
+		}
+		Convey("When the publisher publishes to a new topic", func() {
+			publishResults = publisher.Publish(ctx, topic, 10)
+			Convey("Messages are published without errors", func() {
+				So(publishResults, ShouldNotBeEmpty)
+				for _, r := range publishResults {
+					So(r.Err, ShouldBeNil)
+				}
+			})
+		})
+	})
+
+	// Spin up concurrent subscribers
+	for i := 0; i < subscribers; i++ {
+		wg.Add(1)
+		go func(subscription string) {
+			Convey("Given a Subscriber", t, func() {
+				defer wg.Done()
+				ctx := context.Background()
+				subscriber, err := NewSubscriber(ctx, projectID, "sub1")
+				if err != nil {
+					t.Fatalf("Unable to create client: %v", err)
+				}
+				Convey("When the subscriber receives on a new subscription", func() {
+					receivedMessages, err := subscriber.Receive(ctx, topic, subscription, 10*time.Second)
+					Convey("Then it receives the same amount of published messages without errors", func() {
+						So(err, ShouldBeNil)
+						So(len(receivedMessages), ShouldEqual, len(publishResults))
+						Convey("And the messages received are the same as the published ones", func() {
+							publishedMessages := []*pubsub.Message{}
+							for _, p := range publishResults {
+								publishedMessages = append(publishedMessages, p.Message)
+							}
+							for _, message := range receivedMessages {
+								So(publishedMessages, shouldContainPubSubMessage, message)
+							}
+						})
+					})
+				})
+			})
+		}(newSubscriptions[i].ID())
+	}
+	wg.Wait()
+}
+
 func createRandomTopic(ctx context.Context) (*pubsub.Topic, error) {
-	topic := "randomtopic-" + strconv.Itoa(rand.Int()%10000)
+	topic := "randomtopic-" + strconv.Itoa(rand.Int())
 	log.Println("New Topic: " + topic)
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
@@ -191,7 +269,7 @@ func createRandomTopic(ctx context.Context) (*pubsub.Topic, error) {
 }
 
 func createRandomSubscription(ctx context.Context, topic string) (*pubsub.Subscription, error) {
-	subscription := "subscription-" + strconv.Itoa(rand.Int()%10000)
+	subscription := "subscription-" + strconv.Itoa(rand.Int())
 	log.Println("New Subscription: " + subscription)
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
