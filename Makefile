@@ -31,7 +31,7 @@ deploy:
 
 .PHONY: tests
 tests:
-	go test -v ./tests/...
+	go test -v ./tests/... -count=1
 
 .PHONY: logs
 logs:
