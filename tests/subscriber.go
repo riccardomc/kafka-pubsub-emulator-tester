@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -28,7 +27,6 @@ func NewSubscriber(ctx context.Context, project, name string) (*Subscriber, erro
 //GetOrCreateSubscription returns an existing Subscription or creates a new one
 func (s *Subscriber) GetOrCreateSubscription(ctx context.Context, topic, subscription string) (*pubsub.Subscription, error) {
 	sub := s.Client.Subscription(subscription)
-	fmt.Println(sub)
 	exists, err := sub.Exists(ctx)
 	if err != nil {
 		return nil, err
@@ -84,8 +82,5 @@ func (s *Subscriber) Receive(ctx context.Context, topic, subscription string, ti
 		defer mutex.Unlock()
 		messages = append(messages, message)
 	})
-	for i, m := range messages {
-		log.Println(i, string(m.Data))
-	}
 	return messages, err
 }
