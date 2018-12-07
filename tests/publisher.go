@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"math/rand"
 	"strconv"
 	"sync"
-	"sync/atomic"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 )
@@ -15,6 +14,13 @@ import (
 type Publisher struct {
 	Name   string
 	Client *pubsub.Client
+}
+
+//PublishResult represent a sent Message
+type PublishResult struct {
+	Message  *pubsub.Message
+	ServerID string
+	Err      error
 }
 
 //NewPublisher gives you a fresh Publisher
@@ -26,34 +32,52 @@ func NewPublisher(ctx context.Context, project, name string) (*Publisher, error)
 	return &Publisher{name, client}, nil
 }
 
-//Publish publishes n messages to the topic and returns the number of errors
-func (p *Publisher) Publish(ctx context.Context, topic string, n int) int64 {
+//Publish publishes n messages to the topic and returns a list PublishResult
+func (p *Publisher) Publish(ctx context.Context, topic string, n int) []*PublishResult {
 	var wg sync.WaitGroup
-	var totalErrors int64
-	t := p.Client.Topic(topic)
+	var mutex sync.Mutex
 
-	for i := 0; i < n; i++ {
-		result := t.Publish(ctx, &pubsub.Message{
-			Data: []byte("Message-" + p.Name + "-" + strconv.Itoa(i)),
-		})
+	t := p.Client.Topic(topic)
+	messages := p.GenerateMessages(topic, n)
+	results := []*PublishResult{}
+
+	for _, message := range messages {
+		result := t.Publish(ctx, message)
 
 		wg.Add(1)
-		go func(i int, res *pubsub.PublishResult) {
+		go func(message *pubsub.Message, result *pubsub.PublishResult) {
+			defer mutex.Unlock()
 			defer wg.Done()
+
 			// The Get method blocks until a server-generated ID or
 			// an error is returned for the published message.
-			id, err := res.Get(ctx)
-			if err != nil {
-				// Error handling code can be added here.
-				log.Output(1, fmt.Sprintf("Failed to publish: %v", err))
-				atomic.AddInt64(&totalErrors, 1)
-				return
-			}
-			log.Printf("Published message %d; msg ID: %v\n", i, id)
-		}(i, result)
+			id, err := result.Get(ctx)
+
+			mutex.Lock()
+			results = append(results, &PublishResult{message, id, err})
+		}(message, result)
 	}
 
 	wg.Wait()
 
-	return totalErrors
+	return results
+}
+
+func (p *Publisher) GenerateMessages(topic string, n int) []*pubsub.Message {
+	messages := []*pubsub.Message{}
+	now := time.Now()
+	for i := 0; i < n; i++ {
+		messages = append(messages, &pubsub.Message{
+			Attributes: map[string]string{
+				"random":    strconv.Itoa(rand.Int()),
+				"time":      now.String(),
+				"sequence":  strconv.Itoa(i),
+				"topic":     topic,
+				"publisher": p.Name,
+			},
+			Data: []byte(p.Name + "-" + topic + "-" + strconv.Itoa(i)),
+		})
+	}
+
+	return messages
 }
