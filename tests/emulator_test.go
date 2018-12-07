@@ -186,7 +186,7 @@ func TestSinglePublisherMultipleSubscribers(t *testing.T) {
 	var topic string
 	var wg sync.WaitGroup
 
-	subscribers := 100
+	subscribers := 10
 	newSubscriptions := make([]*pubsub.Subscription, subscribers)
 
 	// Setup a new topic and subscriptions and delete them when done
