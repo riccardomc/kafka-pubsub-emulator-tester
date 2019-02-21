@@ -1,3 +1,4 @@
 kafka-pubsub-emulator/
 tests/subscriber
 tests/tests
+.vscode
