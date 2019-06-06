@@ -12,6 +12,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey" // noqa
 )
 
+func createRandomProjectID() string {
+	project := "project-" + strconv.Itoa(rand.Int())
+	log.Printf("New project: %v\n", project)
+	return project
+}
+
 func createRandomTopic(ctx context.Context, projectID string) (*pubsub.Topic, error) {
 	topic := "randomtopic-" + strconv.Itoa(rand.Int())
 	log.Println("New Topic: " + topic)

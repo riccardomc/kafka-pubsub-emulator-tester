@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
@@ -37,7 +36,6 @@ func (s *Subscriber) GetOrCreateSubscription(ctx context.Context, topic, subscri
 		}
 		sub, err = s.Client.CreateSubscription(ctx, subscription, config)
 		if err != nil {
-			log.Fatalf("Failed to create subscription %v\n", err)
 			return nil, err
 		}
 	}

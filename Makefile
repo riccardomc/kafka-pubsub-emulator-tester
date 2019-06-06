@@ -11,6 +11,7 @@ KAFKA_CHART=incubator/kafka
 KAFKA_CHART_VERSION=0.13.5
 
 EMULATOR_RELEASE=emu1
+EMULATOR_NAMESPACE=emu
 EMULATOR_CHART=/home/rmc/Development/Projects/AtoS/helm-charts/charts/kafka-pubsub-emulator
 EMULATOR_CHART_VERSION=0.2.0
 
@@ -65,16 +66,16 @@ tests:
 
 .PHONY: logs
 logs:
-	@while (true) ; do kubectl get pods | grep $(EMULATOR_RELEASE) | awk '{print $$1}' | xargs kubectl logs -f ; slee 0.5 ; done
+	@while (true) ; do kubectl -n $(EMULATOR_NAMESPACE) get pods | grep $(EMULATOR_RELEASE)-kafka-pubsub-emulator | awk '{print $$1}' | xargs kubectl -n $(EMULATOR_NAMESPACE) logs -f ; slee 0.5 ; done
 
 .PHONY: refresh
 refresh: build
-	kubectl get pods | grep $(EMULATOR_RELEASE) | awk '{print $$1}' | xargs kubectl delete pod 
+	kubectl -n $(EMULATOR_NAMESPACE) get pods | grep $(EMULATOR_RELEASE)-kafka-pubsub-emulator | awk '{print $$1}' | xargs kubectl -n $(EMULATOR_NAMESPACE) delete pod
 
 .PHONY: deepclean
 deepclean:
 	helm delete --purge $(KAFKA_RELEASE) $(EMULATOR_RELEASE) || true
-	kubectl get persistentvolumeclaims | grep $(EMULATOR_RELEASE) | awk '{print $$1}' | xargs kubectl delete persistentvolumeclaim || true
-	kubectl get persistentvolumeclaims | grep $(KAFKA_RELEASE) | awk '{print $$1}' | xargs kubectl delete persistentvolumeclaim || true
-	kubectl get persistentvolume | grep $(EMULATOR_RELEASE) | awk '{print $$1}' | xargs kubectl delete persistentvolume || true
-	kubectl get persistentvolume | grep $(KAFKA_RELEASE) | awk '{print $$1}' | xargs kubectl delete persistentvolume || true
+	kubectl -n $(EMULATOR_NAMESPACE) get persistentvolumeclaims | grep $(EMULATOR_RELEASE) | awk '{print $$1}' | xargs kubectl -n $(EMULATOR_NAMESPACE) delete persistentvolumeclaim || true
+	kubectl -n $(EMULATOR_NAMESPACE) get persistentvolumeclaims | grep $(KAFKA_RELEASE) | awk '{print $$1}' | xargs kubectl -n $(EMULATOR_NAMESPACE) delete persistentvolumeclaim || true
+	kubectl -n $(EMULATOR_NAMESPACE) get persistentvolume | grep $(EMULATOR_RELEASE) | awk '{print $$1}' | xargs kubectl -n $(EMULATOR_NAMESPACE) delete persistentvolume || true
+	kubectl -n $(EMULATOR_NAMESPACE) get persistentvolume | grep $(KAFKA_RELEASE) | awk '{print $$1}' | xargs kubectl -n $(EMULATOR_NAMESPACE) delete persistentvolume || true
