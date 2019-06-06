@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -13,7 +14,13 @@ import (
 
 func TestProject(t *testing.T) {
 
-	Convey("Given two Pub/Sub client to two different Projects", t, func() {
+	conveyOrSkip := Convey
+	emulator := os.Getenv("PUBSUB_EMULATOR_HOST")
+	if emulator == "" {
+		conveyOrSkip = SkipConvey
+	}
+
+	conveyOrSkip("Given two Pub/Sub client to two different Projects", t, func() {
 		rand.Seed(time.Now().UnixNano())
 		ctx1 := context.Background()
 		ctx2 := context.Background()
