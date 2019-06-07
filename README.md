@@ -1,6 +1,6 @@
 # Test Kafka Pub/Sub Emulator
 
-This repository contains a set of tests for the functionality of 
+This repository contains a set of tests for the functionality of
 [GCP Kafka Pub/Sub Emulator](https://github.com/GoogleCloudPlatform/kafka-pubsub-emulator)
 
 Some instructions on how to run the tests on
@@ -25,7 +25,7 @@ emulator `emu1` attached to it and exposed using a `NodePort` service. Here it
 is:
 
 ```
-% minikube service list                         
+% minikube service list
 |-------------|----------------------------|-----------------------------|
 |  NAMESPACE  |            NAME            |             URL             |
 |-------------|----------------------------|-----------------------------|
@@ -70,6 +70,41 @@ This shows you the logs of the emulator and restarts when the pod is refreshed:
 ```
 make logs
 ```
+
+## Filing a pull request to the original GoogleCloudPlatform project
+
+The first step to file a PR to the original project is
+[forking](https://help.github.com/en/articles/fork-a-repo) it.
+
+You will need to either add the forked remote to your `kafka-pubsub-emulator`
+clone or override the `FORK` variable in the `Makefile` delete the
+`kafka-pubsub-emulator` directory and copy over your changes.
+
+Once you are happy with your changes and tested them properly, you can open a
+pull request to the original GoogleCloudPlatform project following
+[this](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork)
+guide.
+
+It's a good idea to create an
+[issue](https://help.github.com/en/articles/about-issues) beforehand with an
+explanation of the problem and reference it in the Pull Request. Use the Pull
+Request description for implementation details of your solutions for the issue.
+
+## Update your fork with changes in GoogleCloudPlatform repository
+
+In case there are new changes in the upstream repository, , you can merge them in
+yours by adding a separate remote:
+
+```
+git remote add upstream https://github.com/GoogleCloudPlatform/kafka-pubsub-emulator
+git fetch upstream
+git checkout master
+git rebase upstream/master
+git push -f origin master
+```
+
+You can also wipe the `kafka-pubsub-emulator` directory making sure to save any
+outstanding change beforehand.
 
 ## Manual testing of the kafka cluster
 You don't really need to do this, but if you want to verify what's happening on
