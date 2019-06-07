@@ -17,8 +17,10 @@ EMULATOR_CHART_VERSION=0.2.0
 
 SAMPLE_CONFIG_DIR=$(shell pwd)/kafka-pubsub-emulator/demo/benchmark/config
 
+FORK=https://github.com/riccardomc/kafka-pubsub-emulator
+
 kafka-pubsub-emulator:
-	git clone https://github.com/riccardomc/kafka-pubsub-emulator
+	git clone $(FORK)
 
 %.jar: $(SOURCES) kafka-pubsub-emulator
 	@echo $(SOURCES)
